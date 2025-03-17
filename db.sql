@@ -1,0 +1,35 @@
+CREATE TABLE users (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(50) UNIQUE,
+    email VARCHAR(100) UNIQUE,
+    password VARCHAR(255),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE posts (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT,
+    image VARCHAR(255),
+    caption TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE likes (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT,
+    post_id INT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE
+);
+
+CREATE TABLE comments (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT,
+    post_id INT,
+    comment TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE
+);
