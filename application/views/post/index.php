@@ -21,6 +21,7 @@
 					<span class="navbar-text text-white me-3">
 						Halo, <b><?= $this->session->userdata('username') ?></b>!
 					</span>
+					<a href="javascript:void(0);" class="btn btn-success me-2" data-bs-toggle="modal" data-bs-target="#uploadModal">Upload Post</a>
 					<a href="<?= site_url('auth/logout') ?>" class="btn btn-danger">Logout</a>
 				<?php else: ?>
 					<a href="<?= site_url('auth/login') ?>" class="btn btn-outline-light me-2">Login</a>
@@ -32,58 +33,60 @@
 
 	<!-- Konten Utama -->
 	<div class="container mt-4">
-		<h2 class="text-center mb-4">Postingan Terbaru</h2>
+		<h2 class="text-center mb-4">InstaApp</h2>
+		<?php if($posts): ?>
+			<?php foreach ($posts as $post): ?>
+				<div class="card post-card">
+					<div class="card-body">
+						<h5 class="card-title"><?= $post['username'] ?></h5>
+						<p class="card-text"><?= $post['caption'] ?></p>
+						<img src="<?= base_url('uploads/'.$post['image']) ?>" class="img-fluid rounded" width="300">
 
-		<?php if ($this->session->userdata('user_id')): ?>
-			<!-- Tombol Upload -->
-			<div class="text-center mb-3">
-				<button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#uploadModal">Upload Post</button>
-			</div>
-		<?php endif; ?>
-
-		<?php foreach ($posts as $post): ?>
-			<div class="card post-card">
-				<div class="card-body">
-					<h5 class="card-title"><?= $post['username'] ?></h5>
-					<p class="card-text"><?= $post['caption'] ?></p>
-					<img src="<?= base_url('uploads/'.$post['image']) ?>" class="img-fluid rounded" width="300">
-
-					<!-- Like Section -->
-					<div class="mt-2">
-						<span class="like-btn" data-post="<?= $post['id'] ?>">
-							<button class="btn btn-outline-primary btn-sm">
-								<span class="like-text">
-									<?= $this->m_like->user_liked($this->session->userdata('user_id'), $post['id']) ? 'Unlike' : 'Like' ?>
+						<!-- Like Section -->
+						<div class="mt-2">
+							<?php if ($this->session->userdata('user_id')): ?>
+								<span class="like-btn" data-post="<?= $post['id'] ?>">
+									<button class="btn btn-outline-primary btn-sm">
+										<span class="like-text">
+											<?= $this->m_like->user_liked($this->session->userdata('user_id'), $post['id']) ? 'Unlike' : 'Like' ?>
+										</span>
+									</button>
 								</span>
-							</button>
-						</span>
-						<span class="ms-2"><b class="like-count"><?= $this->m_like->get_likes_count($post['id']) ?></b> Likes</span>
-					</div>
+							<?php endif; ?>
+							<span class="ms-2"><b class="like-count<?= $post['id'] ?>"><?= $this->m_like->get_likes_count($post['id']) ?></b> Likes</span>
+						</div>
 
-					<!-- Komentar Section -->
-					<div class="mt-3">
-						<h6>Komentar:</h6>
-						<ul class="list-group comment-list">
-							<?php foreach ($this->m_comment->get_comments($post['id']) as $comment): ?>
-								<li class="list-group-item"><?= $comment['username'] ?>: <?= $comment['comment'] ?></li>
-							<?php endforeach; ?>
-						</ul>
+						<!-- Komentar Section -->
+						<div class="mt-3">
+							<h6>Komentar:</h6>
+							<ul class="list-group comment-list">
+								<?php foreach ($this->m_comment->get_comments($post['id']) as $comment): ?>
+									<li class="list-group-item"><?= $comment['username'] ?>: <?= $comment['comment'] ?></li>
+								<?php endforeach; ?>
+							</ul>
 
-						<?php if ($this->session->userdata('user_id')): ?>
-							<!-- Form Komentar -->
-							<form class="comment-form mt-2" data-post="<?= $post['id'] ?>">
-								<div class="input-group">
-									<input type="text" class="form-control comment-input" placeholder="Tambah komentar">
-									<button type="submit" class="btn btn-primary">Kirim</button>
-								</div>
-							</form>
-						<?php else: ?>
-							<p class="text-muted">Silakan <a href="<?= site_url('auth/login') ?>">Login</a> untuk berkomentar.</p>
-						<?php endif; ?>
+							<?php if ($this->session->userdata('user_id')): ?>
+								<!-- Form Komentar -->
+								<form class="comment-form mt-2" data-post="<?= $post['id'] ?>">
+									<div class="input-group">
+										<input type="text" class="form-control comment-input" placeholder="Tambah komentar">
+										<button type="submit" class="btn btn-primary">Kirim</button>
+									</div>
+								</form>
+							<?php else: ?>
+								<p class="text-muted">Silakan <a href="<?= site_url('auth/login') ?>">Login</a> untuk berkomentar.</p>
+							<?php endif; ?>
+						</div>
 					</div>
 				</div>
+			<?php endforeach; ?>
+		<?php else: ?>
+			<div class="card post-card empty-card">
+				<div class="card-body">
+					<h5 class="card-title text-center">Belum Ada Post</h5>
+				</div>
 			</div>
-		<?php endforeach; ?>
+		<?php endif; ?>
 	</div>
 
 	<!-- Modal Upload -->
@@ -120,18 +123,20 @@
 		$(".like-btn").click(function () {
 			var postID = $(this).data("post");
 			var btn = $(this).find(".like-text");
-			var likeCount = $(this).siblings(".like-count");
 
-			$.post("<?= site_url('post/like/') ?>" + postID, function (data) {
-				if (btn.text() === "Like") {
-					btn.text("Unlike");
-					likeCount.text(parseInt(likeCount.text()) + 1);
+			$.post("<?= site_url('post/like/') ?>" + postID, function (response) {
+				var data = JSON.parse(response);
+
+				if (data.status === "success") {
+					btn.text(data.liked ? "Unlike" : "Like");
+					$(`.like-count${postID}`).text(data.like_count);
+					alert("Berhasil " + (data.liked ? "menyukai" : "membatalkan like") + " postingan!");
 				} else {
-					btn.text("Like");
-					likeCount.text(parseInt(likeCount.text()) - 1);
+					alert(data.message);
 				}
 			});
 		});
+
 
 		// Preview Gambar Sebelum Upload
 		$("#image").change(function (e) {
@@ -164,6 +169,7 @@
 					$("#uploadModal").modal("hide");
 					$("#uploadForm")[0].reset();
 					$("#previewImage").addClass("d-none");
+					$('.empty-card').remove()
 
 					// Tambahkan post baru tanpa reload halaman
 					var newPost = `
@@ -180,6 +186,19 @@
 									</span>
 									<span class="ms-2"><b class="like-count">0</b> Likes</span>
 								</div>
+
+						<div class="mt-3">
+							<h6>Komentar:</h6>
+							<ul class="list-group comment-list">
+									<li class="list-group-item"></li>
+							</ul>
+								<form class="comment-form mt-2" data-post="` + response.id + `">
+									<div class="input-group">
+										<input type="text" class="form-control comment-input" placeholder="Tambah komentar">
+										<button type="submit" class="btn btn-primary">Kirim</button>
+									</div>
+								</form>
+						</div>
 							</div>
 						</div>
 					`;

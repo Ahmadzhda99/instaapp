@@ -41,15 +41,26 @@ class Post extends CI_Controller
 		}
 	}
 
-
 	public function like($post_id) {
-		if ($this->m_like->user_liked($this->session->userdata('user_id'), $post_id)) {
-			$this->m_like->remove_like($this->session->userdata('user_id'), $post_id);
-		} else {
-			$this->m_like->add_like($this->session->userdata('user_id'), $post_id);
+		$user_id = $this->session->userdata('user_id');
+
+		if (!$user_id) {
+			echo json_encode(['status' => 'error', 'message' => 'Harus login untuk menyukai postingan.']);
+			return;
 		}
-		redirect('post');
+
+		$this->m_like->toggle_like($user_id, $post_id);
+		$like_count = $this->m_like->get_likes_count($post_id);
+		$liked = $this->m_like->user_liked($user_id, $post_id);
+
+		echo json_encode([
+			'status' => 'success',
+			'liked' => $liked,
+			'like_count' => $like_count
+		]);
 	}
+
+
 
 	public function comment($post_id) {
 		header('Content-Type: application/json');

@@ -3,9 +3,19 @@ class M_Like extends CI_Model {
 	public function __construct() {
 		parent::__construct();
 	}
-	
-	public function add_like($user_id, $post_id) {
-		$this->db->insert('likes', ['user_id' => $user_id, 'post_id' => $post_id]);
+
+	public function toggle_like($user_id, $post_id) {
+		if ($this->user_liked($user_id, $post_id)) {
+			$this->db->where('user_id', $user_id)
+			->where('post_id', $post_id)
+			->delete('likes');
+		} else {
+			$data = [
+				'user_id' => $user_id,
+				'post_id' => $post_id
+			];
+			$this->db->insert('likes', $data);
+		}
 	}
 
 	public function remove_like($user_id, $post_id) {
