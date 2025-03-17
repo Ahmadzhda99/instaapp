@@ -1,5 +1,9 @@
 <?php
 class M_Like extends CI_Model {
+	public function __construct() {
+		parent::__construct();
+	}
+	
 	public function add_like($user_id, $post_id) {
 		$this->db->insert('likes', ['user_id' => $user_id, 'post_id' => $post_id]);
 	}
